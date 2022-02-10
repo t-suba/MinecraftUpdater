@@ -12,8 +12,8 @@ import requests
 UPDATE_TO_SNAPSHOT = True
 BACKUP_DIR = 'world_backups'
 LOG_FILENAME = 'auto_updater.log'
-RAM_INITIAL = '512m'
-RAM_MAX = '3g'
+RAM_INITIAL = '10G'
+RAM_MAX = '10G'
 
 MANIFEST_URL = "https://launchermeta.mojang.com/mc/game/version_manifest.json"
 
@@ -82,4 +82,3 @@ for version in data['versions']:
             logging.info('Server is already up to date.')
 
         break
-
