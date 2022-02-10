@@ -30,9 +30,9 @@ else:
     minecraft_ver = data['latest']['release']
 
 # get checksum of running server
-if os.path.exists('../minecraft_server.jar'):
+if os.path.exists('../server.jar'):
     sha = hashlib.sha1()
-    f = open("../minecraft_server.jar", 'rb')
+    f = open("../server.jar", 'rb')
     sha.update(f.read())
     cur_ver = sha.hexdigest()
 else:
@@ -51,44 +51,32 @@ for version in data['versions']:
             link = jar_data['downloads']['server']['url']
             logging.info('Downloading .jar from ' + link + '...')
             response = requests.get(link)
-            with open('minecraft_server.jar', 'wb') as jar_file:
+            with open('server.jar', 'wb') as jar_file:
                 jar_file.write(response.content)
             logging.info('Downloaded.')
-            os.system('screen -S minecraft -X stuff \'say ATTENTION: Server will shutdown temporarily to update in 30 seconds.^M\'')
-            logging.info('Shutting down server in 30 seconds.')
+            os.system('tmux send-keys -t minecraft-server "say Server will shutdown temporarily to update in 5 minutes." Enter')
+            logging.info('Shutting down server in 5 minutes.')
 
-            for i in range(20, 9, -10):
-                time.sleep(10)
-                os.system('screen -S minecraft -X stuff \'say Shutdown in ' + str(i) + ' seconds^M\'')
+            
+            time.sleep(240)
+            os.system('tmux send-keys -t minecraft-server "say Server will shutdown temporarily to update in 1 minute." Enter')
 
-            for i in range(9, 0, -1):
-                time.sleep(1)
-                os.system('screen -S minecraft -X stuff \'say Shutdown in ' + str(i) + ' seconds^M\'')
-            time.sleep(1)
+            time.sleep(90)
 
             logging.info('Stopping server.')
-            os.system('screen -S minecraft -X stuff \'stop^M\'')
+            os.system('tmux kill-session -t minecraft-server')
             time.sleep(5)
-            logging.info('Backing up world...')
-
-            if not os.path.exists(BACKUP_DIR):
-                os.makedirs(BACKUP_DIR)
-
-            backupPath = os.path.join(
-                BACKUP_DIR,
-                "world" + "_backup_" + datetime.now().isoformat().replace(':', '-') + "_sha=" + cur_ver)
-            shutil.copytree("../world", backupPath)
-
-            logging.info('Backed up world.')
+            
             logging.info('Updating server .jar')
 
-            if os.path.exists('../minecraft_server.jar'):
-                os.remove('../minecraft_server.jar')
+            if os.path.exists('../server.jar'):
+                os.remove('../server.jar')
 
-            os.rename('minecraft_server.jar', '../minecraft_server.jar')
+            os.rename('server.jar', '../server.jar')
             logging.info('Starting server...')
             os.chdir("..")
-            os.system('screen -S minecraft -d -m java -Xms' + RAM_INITIAL + ' -Xmx' + RAM_MAX + ' -jar minecraft_server.jar')
+            os.system('tmux new-session -d -s minecraft-server')
+            os.system('tmux send-keys -t minecraft-server "java -Xms10G -Xmx10G -XX:+UseG1GC -XX:+ParallelRefProcEnabled -XX:MaxGCPauseMillis=200 -XX:+UnlockExperimentalVMOptions -XX:+DisableExplicitGC -XX:+AlwaysPreTouch -XX:G1NewSizePercent=30 -XX:G1MaxNewSizePercent=40 -XX:G1HeapRegionSize=8M -XX:G1ReservePercent=20 -XX:G1HeapWastePercent=5 -XX:G1MixedGCCountTarget=4 -XX:InitiatingHeapOccupancyPercent=15 -XX:G1MixedGCLiveThresholdPercent=90 -XX:G1RSetUpdatingPauseTimePercent=5 -XX:SurvivorRatio=32 -XX:+PerfDisableSharedMem -XX:MaxTenuringThreshold=1 -Dusing.aikars.flags=https://mcflags.emc.gs -Daikars.new.flags=true -jar server.jar nogui" Enter')
 
         else:
             logging.info('Server is already up to date.')
