@@ -18,7 +18,7 @@ RAM_MAX = '10G'
 MANIFEST_URL = "https://launchermeta.mojang.com/mc/game/version_manifest.json"
 
 logging.basicConfig(filename=LOG_FILENAME,level=logging.INFO)
-os.chdir(os.path.dirname(os.path.abspath(__file__)))
+os.chdir(os.path.dirname(sys.argv[0]))
 
 # retrieve version manifest
 response = requests.get(MANIFEST_URL)
@@ -30,9 +30,9 @@ else:
     minecraft_ver = data['latest']['release']
 
 # get checksum of running server
-if os.path.exists('/home/opc/minecraft/server/server.jar'):
+if os.path.exists('../server.jar'):
     sha = hashlib.sha1()
-    f = open("/home/opc/minecraft/server/server.jar", 'rb')
+    f = open("../server.jar", 'rb')
     sha.update(f.read())
     cur_ver = sha.hexdigest()
 else:
@@ -69,12 +69,12 @@ for version in data['versions']:
             
             logging.info('Updating server .jar')
 
-            if os.path.exists('/home/opc/minecraft/server/server.jar'):
-                os.remove('/home/opc/minecraft/server/server.jar')
+            if os.path.exists('../server.jar'):
+                os.remove('../server.jar')
 
-            os.rename('server.jar', '/home/opc/minecraft/server/server.jar')
+            os.rename('server.jar', '../server.jar')
             logging.info('Starting server...')
-            os.chdir("/home/opc/minecraft/server")
+            os.chdir("..")
             os.system('tmux new-session -d -s minecraft-server')
             os.system('tmux send-keys -t minecraft-server "java -Xms10G -Xmx10G -XX:+UseG1GC -XX:+ParallelRefProcEnabled -XX:MaxGCPauseMillis=200 -XX:+UnlockExperimentalVMOptions -XX:+DisableExplicitGC -XX:+AlwaysPreTouch -XX:G1NewSizePercent=30 -XX:G1MaxNewSizePercent=40 -XX:G1HeapRegionSize=8M -XX:G1ReservePercent=20 -XX:G1HeapWastePercent=5 -XX:G1MixedGCCountTarget=4 -XX:InitiatingHeapOccupancyPercent=15 -XX:G1MixedGCLiveThresholdPercent=90 -XX:G1RSetUpdatingPauseTimePercent=5 -XX:SurvivorRatio=32 -XX:+PerfDisableSharedMem -XX:MaxTenuringThreshold=1 -Dusing.aikars.flags=https://mcflags.emc.gs -Daikars.new.flags=true -jar server.jar nogui" Enter')
 
