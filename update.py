@@ -1,4 +1,6 @@
-import os
+#!/usr/bin/python
+
+import os, sys
 import time
 import shutil
 import hashlib
